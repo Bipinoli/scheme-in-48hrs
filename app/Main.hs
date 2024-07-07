@@ -38,8 +38,32 @@ parseAtom = do
 parseNumber :: Parser LispVal
 parseNumber = liftM (Number . read) $ many1 digit
 
+parseList :: Parser LispVal
+parseList = liftM List $ sepBy parseExpr spaces
+
+parseDottedList :: Parser LispVal
+parseDottedList = do
+  headLst <- endBy parseExpr spaces
+  tailItem <- char '.' >> spaces >> parseExpr
+  return $ DottedList headLst tailItem
+
+parseQuoted :: Parser LispVal
+parseQuoted = do
+  _ <- char '\''
+  x <- parseExpr
+  return $ List [Atom "quote", x]
+
 parseExpr :: Parser LispVal
-parseExpr = parseAtom <|> parseString <|> parseNumber
+parseExpr =
+  parseAtom
+    <|> parseString
+    <|> parseNumber
+    <|> parseQuoted
+    <|> do
+      _ <- char '('
+      lst <- try parseList <|> parseDottedList
+      _ <- char ')'
+      return lst
 
 readExpr :: String -> String
 readExpr input = case parse parseExpr "Main.hs" input of
