@@ -18,6 +18,8 @@ data LispVal
   | String String
   | Bool Bool
 
+instance Show LispVal where show = showVal
+
 parseString :: Parser LispVal
 parseString = do
   _ <- char '"'
@@ -68,7 +70,19 @@ parseExpr =
 readExpr :: String -> String
 readExpr input = case parse parseExpr "Main.hs" input of
   Left err -> "No match: " ++ show err
-  Right _ -> "Found value"
+  Right val -> "Found value: " ++ show val
+
+showVal :: LispVal -> String
+showVal (String contents) = "\"" ++ contents ++ "\""
+showVal (Atom atomVal) = atomVal
+showVal (Number numVal) = show numVal
+showVal (Bool True) = "#t"
+showVal (Bool False) = "#f"
+showVal (List lst) = "(" ++ unwordsList lst ++ ")"
+showVal (DottedList lst tailItem) = "(" ++ unwordsList lst ++ " . " ++ showVal tailItem ++ ")"
+
+unwordsList :: [LispVal] -> String
+unwordsList = unwords . map showVal
 
 main :: IO ()
 main = do
