@@ -3,6 +3,7 @@ module Main where
 import Control.Monad (liftM)
 import System.Environment
 import Text.ParserCombinators.Parsec hiding (spaces)
+import Text.Read.Lex (numberToFixed)
 
 symbol :: Parser Char
 symbol = oneOf "!#$%&|*+-/:<=>?@^_~"
@@ -67,10 +68,10 @@ parseExpr =
       _ <- char ')'
       return lst
 
-readExpr :: String -> String
+readExpr :: String -> LispVal
 readExpr input = case parse parseExpr "Main.hs" input of
-  Left err -> "No match: " ++ show err
-  Right val -> "Found value: " ++ show val
+  Left err -> String $ "No match: " ++ show err
+  Right val -> val
 
 showVal :: LispVal -> String
 showVal (String contents) = "\"" ++ contents ++ "\""
@@ -84,7 +85,39 @@ showVal (DottedList lst tailItem) = "(" ++ unwordsList lst ++ " . " ++ showVal t
 unwordsList :: [LispVal] -> String
 unwordsList = unwords . map showVal
 
+eval :: LispVal -> LispVal
+eval val@(String _) = val
+eval val@(Number _) = val
+eval val@(Bool _) = val
+eval (List [Atom "quote", val]) = val
+eval (List (Atom func : args)) = apply func $ map eval args
+
+apply :: String -> [LispVal] -> LispVal
+apply func args = maybe (Bool False) ($ args) $ lookup func primitives
+
+primitives :: [(String, [LispVal] -> LispVal)]
+primitives =
+  [ ("+", numericBinop (+)),
+    ("-", numericBinop (-)),
+    ("*", numericBinop (*)),
+    ("/", numericBinop div),
+    ("mod", numericBinop mod),
+    ("quotient", numericBinop quot),
+    ("remainder", numericBinop rem)
+  ]
+
+numericBinop :: (Integer -> Integer -> Integer) -> [LispVal] -> LispVal
+numericBinop op args = Number $ foldr1 op $ map unpackNumber args
+
+unpackNumber :: LispVal -> Integer
+unpackNumber (Number n) = n
+unpackNumber (String n) =
+  let parsed = reads n :: [(Integer, String)]
+   in if null parsed
+        then 0
+        else fst $ head parsed
+unpackNumber (List [n]) = unpackNumber n
+unpackNumber _ = 0
+
 main :: IO ()
-main = do
-  (expr : _) <- getArgs
-  putStrLn (readExpr expr)
+main = getArgs >>= print . eval . readExpr . head
