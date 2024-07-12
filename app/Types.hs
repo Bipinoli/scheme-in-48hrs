@@ -1,4 +1,4 @@
-module Types where
+module Types (LispVal (..), unwordsList) where
 
 data LispVal
   = Atom String

@@ -1,6 +1,7 @@
 module Parser where
 
 import Control.Monad (liftM)
+import Errors as Errors
 import Text.ParserCombinators.Parsec hiding (spaces)
 import Types
 
@@ -57,7 +58,7 @@ parseExpr =
       _ <- char ')'
       return lst
 
-readExpr :: String -> LispVal
-readExpr input = case parse parseExpr "Main.hs" input of
-  Left err -> String $ "No match: " ++ show err
-  Right val -> val
+readExpr :: String -> Errors.ThrowsError LispVal
+readExpr input = case parse parseExpr "parser.hs" input of
+  Left err -> Errors.throwError $ Errors.Parser err
+  Right val -> return val

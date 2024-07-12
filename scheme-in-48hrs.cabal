@@ -61,7 +61,7 @@ executable scheme-in-48hrs
     main-is:          Main.hs
 
     -- Modules included in this executable, other than Main.
-    other-modules: Types, Parser, Eval
+    other-modules: Types, Parser, Eval, Errors
 
     -- LANGUAGE extensions used by modules in this package.
     -- other-extensions:
@@ -69,7 +69,8 @@ executable scheme-in-48hrs
     -- Other library packages from which modules are imported.
     build-depends:    
       base ^>=4.17.2.1,
-      parsec
+      parsec,
+      mtl
 
     -- Directories containing source files.
     hs-source-dirs:   app
